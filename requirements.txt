@@ -1,0 +1,4 @@
+coverage==5.0.2
+Jinja2==2.10.3
+behave==1.2.6
+requests==2.22.0
