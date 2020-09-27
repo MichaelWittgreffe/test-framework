@@ -70,17 +70,17 @@ def make_http_request(context: Context, protocol: str, string_req_data: str, end
     req_run = request_factory(protocol, context.default_values['Auth URL'], context.default_values['Username'], context.default_values['Password'])
 
     # make the request
-    context.start_time = get_current_time_ms()
-    resp_body, resp_headers, resp_status_code, resp_err = req_run.run_request(method, endpoint, content_type, parsed_body, query_params, headers, auth_enabled)
-    context.end_time = get_current_time_ms()
 
-    # set context values or throw the error
-    if len(resp_err):
-        raise RuntimeError(f"Request Error: {resp_err}")
+    try:
+        context.start_time = get_current_time_ms()
+        resp_body, resp_headers, resp_status_code = req_run.run_request(method, endpoint, content_type, parsed_body, query_params, headers, auth_enabled)
+        context.end_time = get_current_time_ms()
 
-    context.response_body = resp_body
-    context.response_headers = resp_headers
-    context.response_status_code = resp_status_code
+        context.response_body = resp_body
+        context.response_headers = resp_headers
+        context.response_status_code = resp_status_code
+    except Exception as ex:
+        raise RuntimeError(f"Request Error: {ex}")
 
 
 @then('The response Status Code is {status_code}')  # type: ignore
