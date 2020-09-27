@@ -31,9 +31,9 @@ tf-init:
 tf-process-files:
 	# you need to add your parameters after 'REPO_ROOT' as key-value pairs, 'PASSWORD' is given as an example
 	@echo "Populating Secrets"
-	@python3 ./test-framework/populate_secrets.py $(REPO_ROOT) PASSWORD=$(PASSWORD)
+	@python3 ./test-framework/cmd/populate_secrets.py $(REPO_ROOT) PASSWORD=$(PASSWORD)
 	cd ./test-framework && behave -k --stop --junit --format progress3 --tags api
-	python3 ./test-framework/remove_generated_features.py $(REPO_ROOT)
+	python3 ./test-framework/cmd/remove_generated_features.py $(REPO_ROOT)
 
 tf-success:
 	printf "\n\e[1;32mTest Files Successful\e[0m\n"

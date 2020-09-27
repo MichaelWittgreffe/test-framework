@@ -1,12 +1,15 @@
 import os
 import json
+
+from behave.runner import Context
+
 from generic_api.factory import request_factory
 from features.steps.support.templator import populate_template
 from features.steps.processor_utils import get_dot_path_data, get_current_time_ms
 
 
 @given('a request template {req_name} containing')
-def add_request_template(context, req_name):
+def add_request_template(context: Context, req_name):
     "adds the request template to the request.templates"
     if len(req_name):
         if not hasattr(context, 'templates'):
@@ -17,7 +20,7 @@ def add_request_template(context, req_name):
 
 
 @when('User makes {authenticated} {request_type} request {request_template_name} to endpoint {endpoint} containing')
-def make_template_request(context, authenticated, request_type, request_template_name, endpoint):
+def make_template_request(context: Context, authenticated, request_type, request_template_name, endpoint):
     "get the template, populate values from table, post results to context"
     # setup request data
     body_values = {}
@@ -37,7 +40,7 @@ def make_template_request(context, authenticated, request_type, request_template
         return make_http_request(context, request_type, string_req_data, endpoint, auth_enabled, body_values)
 
 
-def make_http_request(context, protocol, string_req_data, endpoint, auth_enabled, body_values):
+def make_http_request(context: Context, protocol, string_req_data, endpoint, auth_enabled, body_values):
     "make an HTTP request through the GenericAPI"
     req_data = json.loads(string_req_data)
     method = req_data['method'].upper()
@@ -83,7 +86,7 @@ def make_http_request(context, protocol, string_req_data, endpoint, auth_enabled
 
 
 @then('The response Status Code is {status_code}')
-def validate_status_code(context, status_code):
+def validate_status_code(context: Context, status_code):
     status_code = int(status_code)
     if status_code == context.response_status_code:
         return True
@@ -92,7 +95,7 @@ def validate_status_code(context, status_code):
 
 
 @then('The {data_type} response body includes')
-def validate_body_includes(context, data_type):
+def validate_body_includes(context: Context, data_type):
     "validate the body includes the given paths (does not validate data)"
     for row in context.table:
         # exception raised from method if the request field does not exist
@@ -110,7 +113,7 @@ def validate_body_includes(context, data_type):
 
 
 @then('The {data_type} response body contains')
-def validate_body_contains(context, data_type):
+def validate_body_contains(context: Context, data_type):
     "validate the body includes the given path with the given data associated"
     for row in context.table:
         # exception raised from method if the request field does not exist
@@ -133,7 +136,7 @@ def validate_body_contains(context, data_type):
 
 
 @then('The {req_type} response header includes')
-def validate_header_includes(context, req_type):
+def validate_header_includes(context: Context, req_type):
     "validate the header includes the given fields (does not validate data)"
     for row in context.table:
         field_name = row['label']
@@ -145,7 +148,7 @@ def validate_header_includes(context, req_type):
 
 
 @then('The {req_type} response header contains')
-def validate_header_contains(context, req_type):
+def validate_header_contains(context: Context, req_type):
     "validate the header includes the given fields with the given associated values"
     for row in context.table:
         field_name = row['label']
@@ -162,7 +165,7 @@ def validate_header_contains(context, req_type):
 
 
 @then('the elapsed time is no more than {max_time} ms')
-def validate_request_time(context, max_time):
+def validate_request_time(context: Context, max_time):
     "ensures the time taken for the request is no longer than the given millisecond value"
     elapsed_time = context.end_time - context.start_time
 

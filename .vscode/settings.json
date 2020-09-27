@@ -1,0 +1,12 @@
+{
+    "python.languageServer": "Microsoft",
+    "python.linting.pylintPath": "pylint",
+    "python.linting.pycodestylePath": "pep8",
+    "python.formatting.autopep8Args": [
+        "--max-line-length=160"
+    ],
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.formatOnPaste": true
+    },
+}
