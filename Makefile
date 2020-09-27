@@ -11,7 +11,7 @@ test:
 	
 test-cov:
 	coverage run --source="." -m unittest discover
-	coverage html --omit="*/test/*,*/tests/*,*__init__.py,*/example_app/*,*/features/*,*/populate_secrets.py,*/remove_generated_features.py,*/example_request_runner.py,*/template_constants.py"
+	coverage html --omit="*/test/*,*/tests/*,*__init__.py,*/example_app/*,*/populate_secrets.py,*/remove_generated_features.py,*/example_request_runner.py,*/template_constants.py"
 
 # -----------------------------
 # Add the below to your projects Makefile to add the test framework to it

@@ -2,13 +2,21 @@ import os
 import json
 
 from behave.runner import Context
+from behave import given, when, then
+from jinja2 import Template
 
 from generic_api.factory import request_factory
-from features.steps.support.templator import populate_template
+from generic_api.request_runner import RequestRunner
 from features.steps.processor_utils import get_dot_path_data, get_current_time_ms
 
 
-@given('a request template {req_name} containing')  # type: ignore
+def populate_template(template: str, input_values: dict) -> str:
+    "populate template renders a given Jinja2 template string with the given input_values"
+    template_obj = Template(template)
+    return template_obj.render(input_values)
+
+
+@given('a request template {req_name} containing')
 def add_request_template(context: Context, req_name: str) -> None:
     "adds the request template to the request.templates"
     if not len(req_name):
@@ -20,7 +28,7 @@ def add_request_template(context: Context, req_name: str) -> None:
     context.templates[req_name] = context.text
 
 
-@when('User makes {authenticated} {request_type} request {request_template_name} to endpoint {endpoint} containing')  # type: ignore
+@when('User makes {authenticated} {request_type} request {request_template_name} to endpoint {endpoint} containing')
 def make_template_request(context: Context, authenticated: str, request_type: str, request_template_name: str, endpoint: str):
     "get the template, populate values from table, post results to context"
     body_values = {}
@@ -67,7 +75,8 @@ def make_http_request(context: Context, protocol: str, string_req_data: str, end
     else:
         headers = {}
 
-    req_run = request_factory(protocol, context.default_values['Auth URL'], context.default_values['Username'], context.default_values['Password'])
+    req_run: RequestRunner = request_factory(protocol, context.default_values['Auth URL'],
+                                             context.default_values['Username'], context.default_values['Password'])
 
     # make the request
     try:
@@ -82,13 +91,13 @@ def make_http_request(context: Context, protocol: str, string_req_data: str, end
         raise RuntimeError(f"Request Error: {ex}")
 
 
-@then('The response Status Code is {status_code}')  # type: ignore
+@then('The response Status Code is {status_code}')
 def validate_status_code(context: Context, status_code: str) -> None:
     if int(status_code) != context.response_status_code:
         raise ValueError(f"Returned Status Code Is Not Equal To Requested. Resp: {context.response_status_code}; Req: {int(status_code)}")
 
 
-@then('The {data_type} response body includes')  # type: ignore
+@then('The {data_type} response body includes')
 def validate_body_includes(context: Context, data_type: str) -> None:
     "validate the body includes the given paths (does not validate data)"
     for row in context.table:
@@ -102,7 +111,7 @@ def validate_body_includes(context: Context, data_type: str) -> None:
             context.saved_results[dot_path] = data
 
 
-@then('The {data_type} response body contains')  # type: ignore
+@then('The {data_type} response body contains')
 def validate_body_contains(context: Context, data_type: str) -> None:
     "validate the body includes the given path with the given data associated"
     for row in context.table:
@@ -120,7 +129,7 @@ def validate_body_contains(context: Context, data_type: str) -> None:
             context.saved_results[dot_path] = data
 
 
-@then('The {req_type} response header includes')  # type: ignore
+@then('The {req_type} response header includes')
 def validate_header_includes(context: Context, req_type: str):
     "validate the header includes the given fields (does not validate data)"
     for row in context.table:
@@ -129,7 +138,7 @@ def validate_header_includes(context: Context, req_type: str):
             raise ValueError(f"{field_name} Not Found In Response Headers")
 
 
-@then('The {req_type} response header contains')  # type: ignore
+@then('The {req_type} response header contains')
 def validate_header_contains(context: Context, req_type: str) -> None:
     "validate the header includes the given fields with the given associated values"
     for row in context.table:
@@ -145,7 +154,7 @@ def validate_header_contains(context: Context, req_type: str) -> None:
             raise ValueError(f"{field_name} Is Not Equal; Wanted: {expected_field_value}; Got: {field_value}")
 
 
-@then('the elapsed time is no more than {max_time} ms')  # type: ignore
+@then('the elapsed time is no more than {max_time} ms')
 def validate_request_time(context: Context, max_time: str) -> None:
     "ensures the time taken for the request is no longer than the given millisecond value"
     elapsed_time = context.end_time - context.start_time
