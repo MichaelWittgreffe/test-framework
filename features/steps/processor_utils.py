@@ -1,7 +1,8 @@
 import time
+from typing import Any
 
 
-def get_dot_path_data(input_data, dot_path, data_type):
+def get_dot_path_data(input_data, dot_path, data_type) -> Any:
     "traverses down the JSON looking for the given path, returns data at that point, None if error or raises exception"
     if data_type.lower() == "json":
         # find json dotpath and return data

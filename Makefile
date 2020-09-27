@@ -4,7 +4,11 @@ all:
 
 install:
 	pip3 install -r requirements.txt
+
 test:
+	coverage run --source="." -m unittest discover
+	
+test-cov:
 	coverage run --source="." -m unittest discover
 	coverage html --omit="*/test/*,*/tests/*,*__init__.py,*/example_app/*,*/features/*,*/populate_secrets.py,*/remove_generated_features.py,*/example_request_runner.py,*/template_constants.py"
 
