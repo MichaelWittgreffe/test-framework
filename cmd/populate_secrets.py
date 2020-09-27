@@ -8,8 +8,8 @@ from jinja2 import Template
 
 def populate_template(template: str, input_values: dict) -> str:
     "populate template renders a given Jinja2 template string with the given input_values"
-    template = Template(template)
-    return template.render(input_values)
+    template_obj = Template(template)
+    return template_obj.render(input_values)
 
 
 def get_all_files_in_dir(dir_path: str) -> List[str]:
@@ -52,7 +52,7 @@ def populate_jinja_template_tags(file_content: str) -> str:
 def get_secrets(args: List[str]) -> Dict[str, str]:
     "get the secrets from the key-value params passed as cmd-args and return as a dictionary"
     if not len(args) >= 2:
-        return None
+        raise ValueError("Invalid Args")
 
     result: Dict[str, str] = {}
 

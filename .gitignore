@@ -4,3 +4,4 @@
 htmlcov
 .APIFuzzer
 reports/*
+.mypy_cache

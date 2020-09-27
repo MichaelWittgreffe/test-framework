@@ -6,6 +6,7 @@ install:
 	pip3 install -r requirements.txt
 
 test:
+	mypy cmd features generic_api
 	coverage run --source="." -m unittest discover
 	
 test-cov:
