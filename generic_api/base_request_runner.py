@@ -192,7 +192,7 @@ class RequestRunner():
         headers['Content-Type'] = content_type
 
         try:
-            resp: requests.Response = requests.put(url, headers=headers, data=body)
+            resp: requests.Response = requests.put(url, headers=headers, data=encoded_body)
             resp_headers = dict(resp.headers)
 
             if len(resp.text):
