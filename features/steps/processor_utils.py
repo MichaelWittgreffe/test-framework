@@ -21,10 +21,8 @@ def _get_dot_path_json_data(input_data: dict, dot_path: str) -> Any:
                 count = count + 1
     except KeyError as ex:
         raise ValueError(f"Required Key {str(ex)} Not Found In Response: {dot_path}")
-    except Exception as ex:
-        raise RuntimeError(f"Ex Processing dot_path {dot_path}: {str(ex)}")
-
-    raise ValueError("Path {dot_path} Not Found")
+    except IndexError as ex:
+        raise ValueError(f"Required Index Not Found In Response: {dot_path}")
 
 
 def get_dot_path_data(input_data: dict, dot_path: str, data_type: str) -> Any:
@@ -35,5 +33,5 @@ def get_dot_path_data(input_data: dict, dot_path: str, data_type: str) -> Any:
     raise TypeError(f"Data Type {data_type} Not Supported")
 
 
-def get_current_time_ms():
-    return time.time() * 1000
+def get_current_time_ms() -> int:
+    return int(time.time()) * 1000

@@ -1,6 +1,6 @@
 from typing import Dict, Any
 
-from .base_request_runner import RequestRunner
+from generic_api.request_runner import RequestRunner
 
 
 class ExampleRequestRunner(RequestRunner):

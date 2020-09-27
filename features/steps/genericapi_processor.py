@@ -3,10 +3,17 @@ import json
 
 from behave.runner import Context
 from behave import given, when, then
+from jinja2 import Template
 
 from generic_api.factory import request_factory
-from features.steps.support.templator import populate_template
+from generic_api.request_runner import RequestRunner
 from features.steps.processor_utils import get_dot_path_data, get_current_time_ms
+
+
+def populate_template(template: str, input_values: dict) -> str:
+    "populate template renders a given Jinja2 template string with the given input_values"
+    template_obj = Template(template)
+    return template_obj.render(input_values)
 
 
 @given('a request template {req_name} containing')
@@ -68,7 +75,8 @@ def make_http_request(context: Context, protocol: str, string_req_data: str, end
     else:
         headers = {}
 
-    req_run = request_factory(protocol, context.default_values['Auth URL'], context.default_values['Username'], context.default_values['Password'])
+    req_run: RequestRunner = request_factory(protocol, context.default_values['Auth URL'],
+                                             context.default_values['Username'], context.default_values['Password'])
 
     # make the request
     try:
