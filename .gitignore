@@ -1,0 +1,7 @@
+*.pyc
+*.log
+.coverage
+htmlcov
+.APIFuzzer
+reports/*
+.mypy_cache
