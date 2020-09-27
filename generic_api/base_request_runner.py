@@ -60,7 +60,7 @@ class RequestRunner():
             "content_type": content_type,
             "body": body,
             "query_params": query_params,
-            "header_params": header_params,
+            "headers": header_params,
         }
 
         if authenticate:

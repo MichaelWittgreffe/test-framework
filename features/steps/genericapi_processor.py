@@ -70,7 +70,6 @@ def make_http_request(context: Context, protocol: str, string_req_data: str, end
     req_run = request_factory(protocol, context.default_values['Auth URL'], context.default_values['Username'], context.default_values['Password'])
 
     # make the request
-
     try:
         context.start_time = get_current_time_ms()
         resp_body, resp_headers, resp_status_code = req_run.run_request(method, endpoint, content_type, parsed_body, query_params, headers, auth_enabled)
