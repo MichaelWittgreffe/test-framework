@@ -1,5 +1,6 @@
 import os
 import json
+from typing import Dict, Any
 
 from behave.runner import Context
 from behave import given, when, then
@@ -12,8 +13,10 @@ from features.steps.processor_utils import get_dot_path_data, get_current_time_m
 
 def populate_template(template: str, input_values: dict) -> str:
     "populate template renders a given Jinja2 template string with the given input_values"
-    template_obj = Template(template)
-    return template_obj.render(input_values)
+    if not len(input_values):
+        return template
+
+    return Template(template).render(input_values)
 
 
 @given('a request template {req_name} containing')
@@ -42,27 +45,43 @@ def make_template_request(context: Context, authenticated: str, request_type: st
     else:
         auth_enabled = False
 
-    string_req_data = context.templates[request_template_name]
+    string_req_data: str = context.templates[request_template_name]
 
     if request_type.lower().find("http") > -1:
-        return make_http_request(context, request_type, string_req_data, endpoint, auth_enabled, body_values)
+        return _make_http_request(context, request_type, string_req_data, endpoint, auth_enabled, body_values)
 
 
-def make_http_request(context: Context, protocol: str, string_req_data: str, endpoint: str, auth_enabled: bool, body_values: dict) -> None:
+def _make_http_request(context: Context, protocol: str, string_req_data: str, endpoint: str, auth_enabled: bool, body_values: dict) -> None:
     "make an HTTP request through the GenericAPI"
-    req_data = json.loads(string_req_data)
-    method = req_data["method"].upper()
+    req_data: Dict[str, Any] = json.loads(string_req_data)
+
+    if "method" not in req_data:
+        raise ValueError("No Method In Template")
+
+    method: str = req_data["method"].upper()
 
     if "query_params" in req_data:
         query_params = req_data["query_params"]
     else:
         query_params = {}
 
+    if "headers" in req_data:
+        headers = req_data["headers"]
+    else:
+        headers = {}
+
     if "body" in req_data:
-        parsed_body = json.loads(populate_template(json.dumps(req_data["body"]), body_values))
+        parsed_body = json.loads(
+            populate_template(
+                json.dumps(req_data["body"]),
+                body_values
+            )
+        )
 
         if "content_type" in req_data:
             content_type = req_data["content_type"]
+        elif "Content-Type" in headers:
+            content_type = headers["Content-Type"]
         else:
             # safe default for most cases
             content_type = "application/json"
@@ -70,13 +89,20 @@ def make_http_request(context: Context, protocol: str, string_req_data: str, end
         parsed_body = {}
         content_type = ""
 
-    if "headers" in req_data:
-        headers = req_data["headers"]
-    else:
-        headers = {}
+    if auth_enabled:
+        for field_to_check in ("Auth URL", "Username", "Password"):
+            if field_to_check not in context.default_values:
+                raise ValueError(f"Authenticated Request Required, But Default Value {field_to_check} Is Missing")
 
-    req_run: RequestRunner = request_factory(protocol, context.default_values['Auth URL'],
-                                             context.default_values['Username'], context.default_values['Password'])
+        auth_url: str = context.default_values['Auth URL']
+        username: str = context.default_values['Username']
+        password: str = context.default_values['Password']
+    else:
+        auth_url = ""
+        username = ""
+        password = ""
+
+    req_run: RequestRunner = request_factory(protocol, auth_url, username, password)
 
     # make the request
     try:
@@ -93,6 +119,9 @@ def make_http_request(context: Context, protocol: str, string_req_data: str, end
 
 @then('The response Status Code is {status_code}')
 def validate_status_code(context: Context, status_code: str) -> None:
+    if not hasattr(context, "response_status_code"):
+        raise RuntimeError("Response Status Code Not Found")
+
     if int(status_code) != context.response_status_code:
         raise ValueError(f"Returned Status Code Is Not Equal To Requested. Resp: {context.response_status_code}; Req: {int(status_code)}")
 
@@ -100,6 +129,9 @@ def validate_status_code(context: Context, status_code: str) -> None:
 @then('The {data_type} response body includes')
 def validate_body_includes(context: Context, data_type: str) -> None:
     "validate the body includes the given paths (does not validate data)"
+    if not hasattr(context, "response_body"):
+        raise RuntimeError("Context Response Body Not Found")
+
     for row in context.table:
         # exception raised from method if the request field does not exist
         dot_path = row["label"]
@@ -114,6 +146,9 @@ def validate_body_includes(context: Context, data_type: str) -> None:
 @then('The {data_type} response body contains')
 def validate_body_contains(context: Context, data_type: str) -> None:
     "validate the body includes the given path with the given data associated"
+    if not hasattr(context, "response_body"):
+        raise RuntimeError("Context Response Body Not Found")
+
     for row in context.table:
         # exception raised from method if the request field does not exist
         dot_path = row["label"]
