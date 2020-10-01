@@ -1,6 +1,6 @@
 # Test Framework
 ## Introduction
-Development area for the Content Processing team's Test Framework.
+A BDD test framework specifically designed for asserting the functionality of HTTP APIs.
 
 ## Adding Framework To Repository
 1. Add the Makefile calls marked in `./Makefile` to your own projects Makefile, adding key-value secret passing on the command-line.

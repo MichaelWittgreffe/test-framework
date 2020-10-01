@@ -295,6 +295,15 @@ class TestValidateBodyIncludes(TestCase):
         with self.assertRaises(RuntimeError):
             genapi.validate_body_includes(m_context, "json")
 
+    def test_invalid_4(self):
+        "incorrectly formatted table"
+        m_context = Context(mock.MagicMock())
+        m_context.table = [{}]
+        m_context.response_body = {"foo": {"bar": 1234}}
+
+        with self.assertRaises(ValueError):
+            genapi.validate_body_includes(m_context, "json")
+
 
 class TestValidateBodyContains(TestCase):
     "test class for the method 'genapi.validate_body_contains'"
@@ -352,6 +361,138 @@ class TestValidateBodyContains(TestCase):
 
         with self.assertRaises(RuntimeError):
             genapi.validate_body_contains(m_context, "json")
+
+    def test_invalid_3(self):
+        "incorrectly formatted row given"
+        m_context = Context(mock.MagicMock())
+        m_context.table = [{}]
+        m_context.response_body = {
+            "foo": {
+                "bar": "foobar",
+            },
+        }
+
+        with self.assertRaises(ValueError):
+            genapi.validate_body_contains(m_context, "json")
+
+
+class TestValidateHeaderIncludes(TestCase):
+    "test class for the method 'genapi.validate_header_includes'"
+
+    def test_valid_1(self):
+        "succesfully validate a given context header includes the requested value"
+        m_context = Context(mock.MagicMock())
+        m_context.table = [{"label": "X-Test"}]
+        m_context.response_headers = {"X-Test": "foo"}
+
+        self.assertIsNone(genapi.validate_header_includes(m_context, "http"))
+
+    def test_invalid_1(self):
+        "requested header field not found"
+        m_context = Context(mock.MagicMock())
+        m_context.table = [{"label": "X-Test"}]
+        m_context.response_headers = {}
+
+        with self.assertRaises(ValueError):
+            genapi.validate_header_includes(m_context, "http")
+
+    def test_invalid_2(self):
+        "response_headers not configured by previous requests"
+        m_context = Context(mock.MagicMock())
+        m_context.table = [{"label": "X-Test"}]
+
+        with self.assertRaises(RuntimeError):
+            genapi.validate_header_includes(m_context, "http")
+
+    def test_invalid_3(self):
+        "incorrectly formatted table"
+        m_context = Context(mock.MagicMock())
+        m_context.table = [{}]
+        m_context.response_headers = {}
+
+        with self.assertRaises(ValueError):
+            genapi.validate_header_includes(m_context, "http")
+
+
+class TestValidateHeaderContians(TestCase):
+    "test class for the method 'genapi.validate_header_contains'"
+
+    def test_valid_1(self):
+        "succesfully validate a given context header contains the requested value"
+        m_context = Context(mock.MagicMock())
+        m_context.table = [{"label": "X-Test", "values": "foo"}]
+        m_context.response_headers = {"X-Test": "foo"}
+
+        self.assertIsNone(genapi.validate_header_contains(m_context, "http"))
+
+    def test_invalid_1(self):
+        "data does not match"
+        m_context = Context(mock.MagicMock())
+        m_context.table = [{"label": "X-Test", "values": "foo"}]
+        m_context.response_headers = {"X-Test": "bar"}
+
+        with self.assertRaises(ValueError):
+            genapi.validate_header_contains(m_context, "http")
+
+    def test_invalid_2(self):
+        "requested field not found in header"
+        m_context = Context(mock.MagicMock())
+        m_context.table = [{"label": "X-Test", "values": "foo"}]
+        m_context.response_headers = {}
+
+        with self.assertRaises(ValueError):
+            genapi.validate_header_contains(m_context, "http")
+
+    def test_invalid_3(self):
+        "incorrectly formatted table"
+        m_context = Context(mock.MagicMock())
+        m_context.table = [{}]
+        m_context.response_headers = {}
+
+        with self.assertRaises(ValueError):
+            genapi.validate_header_contains(m_context, "http")
+
+    def test_invalid_4(self):
+        "response_headers not set by prior request"
+        m_context = Context(mock.MagicMock())
+        m_context.table = [{}]
+
+        with self.assertRaises(RuntimeError):
+            genapi.validate_header_contains(m_context, "http")
+
+
+class TestValidateRequestTime(TestCase):
+    "test class for 'genapi.validate_request_time'"
+
+    def test_valid_1(self):
+        "succesfully validate a context time is within the window"
+        m_context = Context(mock.MagicMock())
+        m_context.start_time = 0
+        m_context.end_time = 25
+
+        self.assertIsNone(genapi.validate_request_time(m_context, 50))
+
+    def test_invalid_1(self):
+        "time is outside the acceptable window"
+        m_context = Context(mock.MagicMock())
+        m_context.start_time = 0
+        m_context.end_time = 60
+
+        with self.assertRaises(ValueError):
+            genapi.validate_request_time(m_context, 50)
+
+    def test_invalid_2(self):
+        "end_time not set by prior methods on context"
+        m_context = Context(mock.MagicMock())
+        m_context.start_time = 0
+
+        with self.assertRaises(RuntimeError):
+            genapi.validate_request_time(m_context, 50)
+
+    def test_invalid_3(self):
+        "given max_time value is invalid"
+        with self.assertRaises(ValueError):
+            genapi.validate_request_time(Context(mock.MagicMock()), -1)
 
 
 if __name__ == "__main__":

@@ -134,6 +134,9 @@ def validate_body_includes(context: Context, data_type: str) -> None:
 
     for row in context.table:
         # exception raised from method if the request field does not exist
+        if "label" not in row:
+            raise ValueError("Table Formatting Incorrect: Missing Header 'label'")
+
         dot_path = row["label"]
         data = get_dot_path_data(context.response_body, dot_path, data_type)
 
@@ -151,6 +154,9 @@ def validate_body_contains(context: Context, data_type: str) -> None:
 
     for row in context.table:
         # exception raised from method if the request field does not exist
+        if "label" not in row or "values" not in row:
+            raise ValueError("Table Formatting Incorrect: Missing Headers 'label' Or 'values'")
+
         dot_path = row["label"]
         expected_data = row["values"]
         data = get_dot_path_data(context.response_body, dot_path, data_type)
@@ -167,7 +173,13 @@ def validate_body_contains(context: Context, data_type: str) -> None:
 @then('The {req_type} response header includes')
 def validate_header_includes(context: Context, req_type: str):
     "validate the header includes the given fields (does not validate data)"
+    if not hasattr(context, "response_headers"):
+        raise RuntimeError("Context Response Headers Not Found")
+
     for row in context.table:
+        if "label" not in row:
+            raise ValueError("Table Formatting Incorrect: Missing Header 'label'")
+
         field_name = row['label']
         if field_name not in context.response_headers:
             raise ValueError(f"{field_name} Not Found In Response Headers")
@@ -176,7 +188,13 @@ def validate_header_includes(context: Context, req_type: str):
 @then('The {req_type} response header contains')
 def validate_header_contains(context: Context, req_type: str) -> None:
     "validate the header includes the given fields with the given associated values"
+    if not hasattr(context, "response_headers"):
+        raise RuntimeError("Context Response Headers Not Found")
+
     for row in context.table:
+        if "label" not in row or "values" not in row:
+            raise ValueError("Table Formatting Incorrect: Missing Headers 'label' Or 'values'")
+
         field_name = row['label']
 
         if field_name not in context.response_headers:
@@ -192,7 +210,13 @@ def validate_header_contains(context: Context, req_type: str) -> None:
 @then('the elapsed time is no more than {max_time} ms')
 def validate_request_time(context: Context, max_time: str) -> None:
     "ensures the time taken for the request is no longer than the given millisecond value"
-    elapsed_time = context.end_time - context.start_time
+    if max_time <= 0:
+        raise ValueError("Invalid max_time Value")
+
+    if not hasattr(context, "end_time") or not hasattr(context, "start_time"):
+        raise RuntimeError("end_time Or start_time Not Set On Context")
+
+    elapsed_time: int = context.end_time - context.start_time
 
     if elapsed_time > int(max_time):
-        raise RuntimeError(f"Request Took Too Long; Took: {elapsed_time}ms; Expected: {max_time}ms")
+        raise ValueError(f"Request Took Too Long; Took: {elapsed_time}ms; Expected: {max_time}ms")
