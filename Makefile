@@ -19,8 +19,8 @@ test-cov:
 
 REPO_ROOT = $(shell pwd)
 
-all-tf:
-	$(MAKE) tf-download tf-init tf-process-files tf-success || $(MAKE) tf-failure
+tf-process:
+	$(MAKE) tf-process-files tf-success || $(MAKE) tf-failure
 
 tf-download:
 	if [ ! -d ./test-framework ]; then git submodule add https://github.com/MichaelWittgreffe/test-framework; fi
