@@ -44,7 +44,7 @@ class RequestRunner():
         Should be overridden by derived classes
         Must return the expected request header as a dict, with the authentication token set.
         """
-        return {}
+        return request_headers
 
     def run_request(self, method: str, url: str, content_type: str = "", body: Dict[str, Any] = {}, query_params: Dict[str, Any] = {},
                     header_params: Dict[str, Any] = {}, authenticate: bool = True) -> Tuple[dict, dict, int]:
@@ -54,14 +54,11 @@ class RequestRunner():
         if not len(url):
             raise ValueError("Invalid URL")
 
-        runner: Callable = self.supported_methods[method.upper()]
-        runner_kwargs = {
-            "url": url,
-            "content_type": content_type,
-            "body": body,
-            "query_params": query_params,
-            "headers": header_params,
-        }
+        if len(body) and not len(content_type):
+            if "Content-Type" in header_params:
+                content_type = header_params["Content-Type"]
+            else:
+                raise ValueError("No Content Type Given For Body")
 
         if authenticate:
             if not len(self.auth_url) or not len(self.username) or not len(self.password):
@@ -72,15 +69,37 @@ class RequestRunner():
             if not len(auth_token):
                 raise ValueError("Returned Auth Token Is Empty")
 
-            runner_kwargs["auth_token"] = auth_token
+            header_params = self.set_request_token(header_params, auth_token)
 
-        return runner(**runner_kwargs)
+        runner_kwargs = {
+            "url": url,
+            "query_params": query_params,
+        }
+
+        if len(body):
+            runner_kwargs["body"] = self._encode_request_body(content_type, body)
+            header_params["Content-Type"] = content_type
+
+        runner_kwargs["content_type"] = content_type
+        runner_kwargs["headers"] = header_params
+
+        runner: Callable = self.supported_methods[method.upper()]
+        resp: requests.Response = runner(**runner_kwargs)
+        resp_headers = dict(resp.headers)
+
+        if len(resp.text):
+            if "Content-Type" in resp_headers:
+                resp_body: Optional[Dict[str, Any]] = self._decode_response_body(resp_headers["Content-Type"], resp.text)
+            else:
+                # assume it is json as its most common mime type
+                resp_body = self._decode_response_body("application/json", resp.text)
+        else:
+            resp_body = None
+
+        return resp_body, resp_headers, resp.status_code
 
     def _encode_request_body(self, content_type: str, request_data: Dict[str, Any]) -> str:
         "encodes and returns the body for the request if the content_type is supported"
-        if request_data is None:
-            raise ValueError("request_data Is None")
-
         if content_type not in self.supported_content_types:
             raise ValueError(f"Unsupported Content Type: {content_type}")
 
@@ -111,100 +130,30 @@ class RequestRunner():
         except Exception as ex:
             raise ValueError(f"Ex Decoding JSON: {str(ex)}")
 
-    def _get_request(self, url: str = "", query_params: Dict[str, Any] = {}, headers: Dict[str, Any] = {}, auth_token: str = "", **kwargs) -> Tuple[Optional[dict], dict, int]:
+    def _get_request(self, url: str = "", query_params: Dict[str, Any] = {}, headers: Dict[str, Any] = {}, **kwargs) -> requests.Response:
         "make a generic GET request"
-        if len(auth_token):
-            headers = self.set_request_token(headers, auth_token)
-
         try:
-            resp: requests.Response = requests.get(url, headers=headers, params=query_params)
-            resp_headers = dict(resp.headers)
-
-            if len(resp.text):
-                if "Content-Type" in resp_headers:
-                    resp_body: Optional[Dict[str, Any]] = self._decode_response_body(resp_headers["Content-Type"], resp.text)
-                else:
-                    # assume it is json as its most common mime type
-                    resp_body = resp.json()
-            else:
-                resp_body = None
-
-            return resp_body, resp_headers, resp.status_code
+            return requests.get(url, headers=headers, params=query_params)
         except Exception as ex:
             raise RuntimeError(str(ex))
 
-    def _post_request(self, url: str = "", query_params: Dict[str, Any] = {}, headers: Dict[str, Any] = {}, auth_token: str = "", content_type: str = "", body: Dict[str, Any] = {}) -> Tuple[Optional[dict], dict, int]:
+    def _post_request(self, url: str = "", headers: Dict[str, Any] = {}, body: Dict[str, Any] = {}, **kwargs) -> requests.Response:
         "make a generic POST request"
-        if len(auth_token):
-            headers = self.set_request_token(headers, auth_token)
-
-        encoded_body = self._encode_request_body(content_type, body)
-        headers['Content-Type'] = content_type
-
         try:
-            resp: requests.Response = requests.post(url, headers=headers, data=encoded_body)
-            resp_headers = dict(resp.headers)
-
-            if len(resp.text):
-                if "Content-Type" in resp_headers:
-                    resp_body: Optional[Dict[str, Any]] = self._decode_response_body(resp_headers["Content-Type"], resp.text)
-                else:
-                    # assume it is json as its most common mime type
-                    resp_body = resp.json()
-            else:
-                resp_body = None
-
-            return resp_body, resp_headers, resp.status_code
+            return requests.post(url, headers=headers, data=body)
         except Exception as ex:
             raise RuntimeError(str(ex))
 
-    def _delete_request(self, url: str = "", query_params: Dict[str, Any] = {}, headers: Dict[str, Any] = {}, auth_token: str = "", **kwargs) -> Tuple[Optional[dict], dict, int]:
+    def _delete_request(self, url: str = "", query_params: Dict[str, Any] = {}, headers: Dict[str, Any] = {}, **kwargs) -> requests.Response:
         "make a generic DELETE request"
-        if len(auth_token):
-            headers = self.set_request_token(headers, auth_token)
-
         try:
-            resp: requests.Response = requests.delete(url, headers=headers, params=query_params)
-            resp_headers = dict(resp.headers)
-
-            if len(resp.text):
-                if "Content-Type" in resp_headers:
-                    resp_body: Optional[Dict[str, Any]] = self._decode_response_body(resp_headers["Content-Type"], resp.text)
-
-                    if resp_body == None:
-                        err = "Error Decoding JSON Response"
-                else:
-                    # assume it is json as its most common mime type
-                    resp_body = resp.json()
-            else:
-                resp_body = None
-
-            return resp_body, resp_headers, resp.status_code
+            return requests.delete(url, headers=headers, params=query_params)
         except Exception as ex:
             raise RuntimeError(str(ex))
 
-    def _put_request(self, url: str = "", query_params: Dict[str, Any] = {}, headers: Dict[str, Any] = {}, auth_token: str = "", content_type: str = "", body: Dict[str, Any] = {}) -> Tuple[Optional[dict], dict, int]:
+    def _put_request(self, url: str = "", headers: Dict[str, Any] = {}, body: Dict[str, Any] = {}, **kwargs) -> Tuple[Optional[dict], dict, int]:
         "make a generic PUT request"
-        if len(auth_token):
-            headers = self.set_request_token(headers, auth_token)
-
-        encoded_body = self._encode_request_body(content_type, body)
-        headers['Content-Type'] = content_type
-
         try:
-            resp: requests.Response = requests.put(url, headers=headers, data=encoded_body)
-            resp_headers = dict(resp.headers)
-
-            if len(resp.text):
-                if "Content-Type" in resp_headers:
-                    resp_body: Optional[Dict[str, Any]] = self._decode_response_body(resp_headers["Content-Type"], resp.text)
-                else:
-                    # assume it is json as its most common mime type
-                    resp_body = resp.json()
-            else:
-                resp_body = None
-
-            return resp_body, resp_headers, resp.status_code
-
+            return requests.put(url, headers=headers, data=body)
         except Exception as ex:
             raise RuntimeError(str(ex))
