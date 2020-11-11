@@ -47,7 +47,7 @@ class RequestRunner():
         return request_headers
 
     def run_request(self, method: str, url: str, content_type: str = "", body: Dict[str, Any] = {}, query_params: Dict[str, Any] = {},
-                    header_params: Dict[str, Any] = {}, authenticate: bool = True) -> Tuple[dict, dict, int]:
+                    header_params: Dict[str, Any] = {}, authenticate: bool = True) -> Tuple[Optional[dict], dict, int]:
         "run an HTTP/1.1 request"
         if not len(method) or method not in self.supported_methods:
             raise ValueError(f"Method {method} Not Supported Or Invalid")
@@ -151,7 +151,7 @@ class RequestRunner():
         except Exception as ex:
             raise RuntimeError(str(ex))
 
-    def _put_request(self, url: str = "", headers: Dict[str, Any] = {}, body: Dict[str, Any] = {}, **kwargs) -> Tuple[Optional[dict], dict, int]:
+    def _put_request(self, url: str = "", headers: Dict[str, Any] = {}, body: Dict[str, Any] = {}, **kwargs) -> requests.Response:
         "make a generic PUT request"
         try:
             return requests.put(url, headers=headers, data=body)

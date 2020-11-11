@@ -210,7 +210,7 @@ def validate_header_contains(context: Context, req_type: str) -> None:
 @then('the elapsed time is no more than {max_time} ms')
 def validate_request_time(context: Context, max_time: str) -> None:
     "ensures the time taken for the request is no longer than the given millisecond value"
-    if max_time <= 0:
+    if int(max_time) <= 0:
         raise ValueError("Invalid max_time Value")
 
     if not hasattr(context, "end_time") or not hasattr(context, "start_time"):
